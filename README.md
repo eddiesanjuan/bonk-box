@@ -289,9 +289,34 @@ firework dropped on him and getting back up, drawn on the alternate screen so
 **your scrollback is untouched** — when it finishes, one line is added and
 everything you had is where you left it. Ctrl-C puts the terminal back.
 
-Piped or redirected, there is no animation: three static lines, so
-`npm test || bonk` reads well in a build log. It is only ANSI, so it works over
-SSH. `NO_COLOR` is respected everywhere.
+Piped or redirected there is no animation, so you get the same beats as a comic
+strip instead — five panels, six for the firework, which earns one for taking
+him with it. `npm test || bonk` reads well in a build log. It is only ANSI, so
+it works over SSH, and piped output carries no colour codes at all.
+
+He says something different every time he gets up. The lines live in
+[`bin/quips.txt`](bin/quips.txt) — edit them however you like — and they are
+dealt from a shuffled deck, so you see the whole set before any of it repeats.
+
+### The one bit of inference
+
+When the deck is nearly out, and at most once a day, he can ask your own
+`claude` CLI for a dozen more one-liners in the background. This is the only
+feature in the whole toy that talks to a model.
+
+**What it sends:** a fixed sentence asking for deadpan captions about a
+cartoon stickman under an anvil. That is the entire prompt. Nothing about you,
+your code, your prompts, your paths or your counts is in it — there is nothing
+of yours in that file to send. New lines land in
+`~/.config/bonk-box/quips-learned.txt`, so your own list is never rewritten.
+
+It is detached and nothing waits for it: the animation has already finished
+before it starts, and if it fails you simply do not get new lines. Turn it off
+with:
+
+```json
+{ "quipRefill": "off" }
+```
 
 ### What actually leaves your machine
 
