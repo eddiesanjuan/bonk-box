@@ -66,19 +66,52 @@ fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
 console.log(added ? `added ${added} hook(s)` : 'hooks were already installed, nothing to do');
 NODE
 
-# The bonk command, so `npm test || bonk` works from anywhere.
+# The bonk command, so `npm test || bonk` works from anywhere. It is a shim
+# rather than a copy, so pulling the repo updates the command with it.
 mkdir -p "$BIN"
 cat > "$BIN/bonk" <<EOF
 #!/usr/bin/env bash
-# Summon Bonk Box. Silent on success.
-if ! pgrep -f "Bonk Box.app/Contents/MacOS" >/dev/null 2>&1; then
-  open -a "Bonk Box" >/dev/null 2>&1 || true
-  sleep 1
-fi
-"$HOOKS/bonk-event.sh" bonk
+exec "$REPO/bin/bonk" "\$@"
 EOF
 chmod +x "$BIN/bonk"
 say "installed the 'bonk' command to $BIN/bonk"
+
+# ---- the status line ----------------------------------------------------
+# He gets a small segment on the end of whatever status line you already have.
+# Yours is never edited: we record the command it is set to, put ours in front,
+# and ours runs yours first and prints its output untouched.
+STATE_DIR="$HOME/.config/bonk-box"
+mkdir -p "$STATE_DIR"
+
+node - "$SETTINGS" "$REPO" "$STATE_DIR" <<'NODE'
+const fs = require('fs');
+const [file, repo, stateDir] = process.argv.slice(2);
+const settings = JSON.parse(fs.readFileSync(file, 'utf8'));
+const ours = `${repo}/bin/bonk-statusline`;
+const record = `${stateDir}/statusline.json`;
+
+const current = settings.statusLine;
+const already =
+  current && typeof current.command === 'string' && current.command.includes('bonk-statusline');
+
+if (already) {
+  console.log('the status line segment was already installed');
+} else {
+  // Keep the WHOLE original object, not just its command, so putting it back
+  // restores every field it had - including ones we do not know about.
+  fs.writeFileSync(
+    record,
+    JSON.stringify({ note: 'what Bonk Box wrapped, so it can be put back exactly', original: current || null }, null, 2) + '\n'
+  );
+  // The runtime path reads this one: a single plain line, so a command with
+  // quotes or arguments in it comes back exactly as it went in.
+  fs.writeFileSync(`${stateDir}/statusline-wrapped`, ((current && current.command) || '') + '\n');
+  settings.statusLine = { type: 'command', command: ours };
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
+  console.log(current ? 'wrapped your existing status line' : 'set up the status line');
+}
+NODE
+say "status line segment installed"
 
 case ":$PATH:" in
   *":$BIN:"*) ;;

@@ -230,7 +230,8 @@ Optional, and entirely opt-in. Nothing installs this for you.
 cd bonk-box && ./scripts/install-hooks.sh
 ```
 
-That adds three Claude Code hooks and a `bonk` command:
+That adds three Claude Code hooks, a `bonk` command, and a small stickman on
+the end of your status line:
 
 | When | What he does |
 | --- | --- |
@@ -242,6 +243,55 @@ That adds three Claude Code hooks and a `bonk` command:
 He slides in from the edge **without taking your keyboard**, does his bit, and
 slides back out after about eight seconds. Click him to engage properly. Taking
 focus automatically is a config flag that is off by default.
+
+### He lives in your status line too
+
+The desktop box is lovely and you are not always looking at it. So the same
+events put a stickman on the end of Claude Code's own status line, where you
+already are:
+
+```
+Fable 5 [███░░░░░░░░░░░░░░░░░] 17% main* bonk-box  ᕦ(ᐛ)ᕤ 2·240
+```
+
+He stands about, winces when a tool call fails, braces when a prompt sounds
+rough, and settles back to standing after a minute. The two numbers are the
+heat tally: **today, then all time**.
+
+**Your status line is not replaced.** The installer records whatever command
+you already had, and ours runs yours first and prints its output untouched
+before adding the stickman. If any part of ours goes wrong it prints your line
+and nothing else — a toy is never a reason for your status line to break.
+`scripts/uninstall-hooks.sh` puts your original setting back exactly, and a
+timestamped backup of `settings.json` is written before anything changes.
+
+Turn just the stickman off and keep everything else:
+
+```json
+{ "statusline": false }
+```
+
+This part reads one small file the hooks write — an event word and a timestamp
+— plus the heat counts. No prompt text is involved in either.
+
+Status line changes, like the hooks, **only apply to new Claude Code sessions.**
+
+### `bonk`
+
+| Command | What happens |
+| --- | --- |
+| `bonk` | An animation in your terminal, and the app reacts too |
+| `bonk --app` | Just summons the desktop box, no animation |
+| `bonk --quiet` | Sends the event and says nothing |
+
+In a terminal you get about two seconds of him getting an anvil, a piano or a
+firework dropped on him and getting back up, drawn on the alternate screen so
+**your scrollback is untouched** — when it finishes, one line is added and
+everything you had is where you left it. Ctrl-C puts the terminal back.
+
+Piped or redirected, there is no animation: three static lines, so
+`npm test || bonk` reads well in a build log. It is only ANSI, so it works over
+SSH. `NO_COLOR` is respected everywhere.
 
 ### What actually leaves your machine
 
@@ -347,6 +397,10 @@ He checks once a day and tells you himself: a sign saying the new version is
 out, with **update now** and **later**. "Update now" fetches the release, swaps
 the app and relaunches. There is also **Check for Updates** in the menu-bar
 menu. Any network trouble is a silent skip — he never nags and never blocks.
+
+That updater carries the app and only the app. The hooks, the `bonk` command
+and the status line live in this repo, so those come with `git pull` — re-run
+`./scripts/install-hooks.sh` if you move the repo somewhere else.
 
 Installs from before v0.4.0 have no in-app updater. Bridge them once with the
 agent line, which works for any version:

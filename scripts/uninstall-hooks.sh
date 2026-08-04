@@ -40,5 +40,30 @@ fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
 console.log(removed ? `removed ${removed} hook(s)` : 'nothing of ours was installed');
 NODE
 
+# Put the status line back exactly as it was, from what we recorded.
+STATE_DIR="$HOME/.config/bonk-box"
+node - "$SETTINGS" "$STATE_DIR/statusline.json" <<'NODE'
+const fs = require('fs');
+const [file, record] = process.argv.slice(2);
+const settings = JSON.parse(fs.readFileSync(file, 'utf8'));
+const cur = settings.statusLine;
+
+if (!cur || typeof cur.command !== 'string' || !cur.command.includes('bonk-statusline')) {
+  console.log('the status line was not ours, leaving it alone');
+} else if (fs.existsSync(record)) {
+  const saved = JSON.parse(fs.readFileSync(record, 'utf8'));
+  if (saved.original) settings.statusLine = saved.original;
+  else delete settings.statusLine;
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
+  fs.unlinkSync(record);
+  try { fs.unlinkSync(record.replace('statusline.json', 'statusline-wrapped')); } catch (e) {}
+  console.log(saved.original ? 'put your status line back' : 'removed the status line we added');
+} else {
+  // No record: we cannot know what was there, so say so rather than guess.
+  console.log('WARNING: our status line is set but the record of yours is gone.');
+  console.log('Leaving it in place - set statusLine in settings.json by hand.');
+}
+NODE
+
 rm -f "$BIN/bonk" && say "removed the 'bonk' command"
 say "done. Restart Claude Code for it to take effect."
