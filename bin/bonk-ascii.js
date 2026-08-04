@@ -16,7 +16,10 @@
 'use strict';
 
 const out = process.stdout;
-const COLOR = !process.env.NO_COLOR;
+/* Colour is for a terminal that asked for it. Piped or captured output gets
+   none, because escape codes in somebody's build log or transcript are just
+   litter - which is exactly how this looked the first time. */
+const COLOR = !process.env.NO_COLOR && Boolean(process.stdout.isTTY);
 const c = (code, s) => (COLOR ? `\x1b[${code}m${s}\x1b[0m` : s);
 const ink = (s) => c('37', s);
 const pencil = (s) => c('90', s);
@@ -214,18 +217,37 @@ function play() {
   tick();
 }
 
-/* Piped, redirected, or in CI: three lines and out. `npm test || bonk` should
-   look like something in a build log, not like a terminal having a fit. */
+/* Piped, redirected, or captured: no animation, but no reason to be dull about
+   it either. The same beats laid out as a comic strip, because somebody
+   reading a build log or a captured command deserves the joke too - one still
+   pose is just a picture of nothing happening. Kept short enough to be polite
+   in a transcript. */
 function still() {
-  const toy = TOYS.anvil;
-  process.stdout.write(
-    [
-      '   ' + toy.art[1] + '      BONK!',
-      '    ( ) ',
-      '    /|\\   he shipped a bug. he is fine.',
-      ''
-    ].join('\n')
-  );
+  const names = Object.keys(TOYS);
+  const toy = TOYS[names[Math.floor(Math.random() * names.length)]];
+  const rule = '  ' + '·'.repeat(20);
+  const pad = '      ';
+  // Every row is five columns wide, so the three toys and every pose line up
+  // in the same channel however they are drawn.
+  const strip = [
+    '',
+    pad + toy.art[0],
+    pad + toy.art[1] + '   ...something is up there',
+    pad + POSES.stand[0],
+    pad + POSES.stand[1],
+    rule,
+    pad + toy.art[1] + '   ' + toy.word,
+    pad + POSES.flat[2],
+    rule,
+    pad + '✦ · ✧',
+    pad + POSES.flat[2],
+    rule,
+    pad + POSES.cheer[0],
+    pad + POSES.cheer[1] + '   he shipped a bug. he is fine.',
+    pad + POSES.cheer[2],
+    ''
+  ];
+  process.stdout.write(strip.join('\n'));
 }
 
 if (out.isTTY) play();
